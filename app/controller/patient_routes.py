@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from app.schema.patient import PatientCreate, PatientUpdate
 from app.schema.response import ResponseModel
@@ -18,31 +19,56 @@ router = APIRouter(
 )
 
 
-@router.get( "/",status_code=status.HTTP_200_OK,response_model=ResponseModel)
+@router.get("/", response_model=ResponseModel)
 def get_patients():
 
-    return get_all_patients()
+    response = get_all_patients()
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )
 
 
-@router.get("/{patient_id}",status_code=status.HTTP_200_OK,response_model=ResponseModel)
+@router.get("/{patient_id}", response_model=ResponseModel)
 def get_patient_by_id(patient_id: int):
 
-    return get_patient(patient_id)
+    response = get_patient(patient_id)
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )
 
 
-@router.post("/",status_code=status.HTTP_201_CREATED,response_model=ResponseModel)
+@router.post("/", response_model=ResponseModel)
 def create_new_patient(patient: PatientCreate):
 
-    return create_patient(patient.model_dump())
+    response = create_patient(patient.model_dump())
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )
 
 
-@router.put("/",status_code=status.HTTP_200_OK,response_model=ResponseModel)
+@router.put("/", response_model=ResponseModel)
 def update_existing_patient(patient: PatientUpdate):
 
-    return update_patient(patient.model_dump())
+    response = update_patient(patient.model_dump())
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )
 
 
-@router.delete("/{patient_id}",status_code=status.HTTP_200_OK,response_model=ResponseModel)
+@router.delete("/{patient_id}", response_model=ResponseModel)
 def delete_existing_patient(patient_id: int):
 
-    return delete_patient(patient_id)
+    response = delete_patient(patient_id)
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )

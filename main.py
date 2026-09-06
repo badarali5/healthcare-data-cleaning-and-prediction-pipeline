@@ -90,7 +90,7 @@ def main():
         if proba_df is not None:
             print(proba_df.iloc[i].round(3).to_dict())
         print()
-
+    
 
 if __name__ == "__main__":
     main()
