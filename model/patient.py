@@ -24,6 +24,5 @@ class Patient(Base):
 
     systolic_bp_reading = Column(Float, nullable=True)
     diastolic_bp_reading = Column(Float, nullable=True)
-
     wheezing_present = Column(String, nullable=True)
     chest_pain_type = Column(String, nullable=True)

@@ -15,7 +15,11 @@ from training.model_training import (
     save_best_model,
 )
 from training.predict import load_artifacts, predict_new
+from database import Base, engine
+from model.patient import Patient
+from app.main import app
 
+Base.metadata.create_all(bind=engine)
 
 def main():
 

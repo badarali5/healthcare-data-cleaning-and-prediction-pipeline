@@ -1,50 +1,37 @@
 import os
 from dotenv import load_dotenv
-import psycopg
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
 
-class DatabaseConnection:
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASSWORD")
 
-    def __init__(self):
-        self.host = os.getenv("DB_HOST")
-        self.port = int(os.getenv("DB_PORT"))
-        self.name = os.getenv("DB_NAME")
-        self.user = os.getenv("DB_USER")
-        self.password = os.getenv("DB_PASS")
-        self.pgdb_conn = None
+DATABASE_URL = (
+    f"postgresql+psycopg://{DB_USER}:{DB_PASS}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
-    def connect(self):
-        try:
-            self.pgdb_conn = psycopg.connect(
-                host=self.host,
-                port=self.port,
-                dbname=self.name,
-                user=self.user,
-                password=self.password
-            )
+engine = create_engine(DATABASE_URL)
 
-            if self.pgdb_conn:
-                print("DATABASE is connected.")
-                return self.pgdb_conn
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
-            else:
-                print("Database connection failed.")
-
-        except psycopg.Error as e:
-            print(f"Except block running. Database connection failed: {e}")
-
-    def disconnect(self):
-        if self.pgdb_conn:
-            self.pgdb_conn.close()
-            print("Database connection closed.")
+Base = declarative_base()
 
 
-def get_db_connection():
-    db = DatabaseConnection()
-    conn = db.connect()
+def get_db():
+    db = SessionLocal()
 
     try:
-        yield conn
+        yield db
     finally:
-        db.disconnect()
+        db.close()
+
