@@ -94,11 +94,38 @@ class HealthcareDataCleaner:
         self.df.to_json(output_file, orient="records", indent=4, date_format="iso")
         print(f"\nCleaned dataset saved as '{output_file}'")
 
-    def outliers():
-        df=pd.read_json('data/cleaned/healthcare_clean.json')
-        plt.boxplot(df["Age"])
-        plt.ylabel('Age')
-        plt.show
+    def handle_outliers(self):
+        numeric_columns = self.df.select_dtypes(include=np.number).columns
+        outlier_counts = {}
+        before_values = self.df[numeric_columns].copy()
+
+        for column in numeric_columns:
+            first_quartile = self.df[column].quantile(0.25)
+            third_quartile = self.df[column].quantile(0.75)
+            iqr = third_quartile - first_quartile
+            lower_bound = first_quartile - (1.5 * iqr)
+            upper_bound = third_quartile + (1.5 * iqr)
+
+            outliers = (self.df[column] < lower_bound) | (self.df[column] > upper_bound)
+            outlier_counts[column] = int(outliers.sum())
+            self.df[column] = self.df[column].clip(lower=lower_bound, upper=upper_bound)
+
+        print("IQR outliers identified and handled:")
+        for column, count in outlier_counts.items():
+            if count:
+                print(f"{column}: {count}")
+
+        if len(numeric_columns):
+            figure, axes = plt.subplots(1, 2, figsize=(16, 8))
+            axes[0].boxplot(before_values, tick_labels=numeric_columns, vert=False)
+            axes[0].set_title("Before IQR Handling")
+            axes[0].set_xlabel("Value")
+            axes[1].boxplot(self.df[numeric_columns], tick_labels=numeric_columns, vert=False)
+            axes[1].set_title("After IQR Handling")
+            axes[1].set_xlabel("Value")
+            figure.tight_layout()
+            figure.savefig("artifacts/healthcare_outliers_boxplot.png")
+            plt.close(figure)
 
 
     def clean_dataset(self):
@@ -111,3 +138,4 @@ class HealthcareDataCleaner:
         self.clean_email()
         self.clean_phone()
         self.clean_dates()
+        self.handle_outliers()
