@@ -30,9 +30,5 @@ class PatientUpdate(PatientBase):
 
 
 class Patient(PatientBase):
-    patient_id: int
-
-
-class Patient(PatientBase):
     class Config:
         from_attributes = True    
