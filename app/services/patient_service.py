@@ -1,15 +1,7 @@
-from fastapi import status
+from sqlalchemy.orm import Session
 
 from app.schema.response import ResponseModel
-from database import SessionLocal
 from model.patient import Patient
-
-response = ResponseModel(
-    status_code=0,
-    status="",
-    message="",
-    data=None
-    )
 
 
 def patient_data(patient: Patient):
@@ -19,79 +11,55 @@ def patient_data(patient: Patient):
     }
 
 
-def get_all_patients():
-    
-
-    db = SessionLocal()
-
+def get_all_patients(db: Session):
     try:
         patients = db.query(Patient).order_by(Patient.patient_id).all()
 
-        response.status_code = status.HTTP_200_OK
-        response.status = "success"
-        response.message = "Patients retrieved successfully"
-        response.data = [patient_data(patient) for patient in patients]
-
-        return response
+        return ResponseModel.success(
+            "Patients retrieved successfully",[patient_data(patient) for patient in patients]
+        )
 
     except Exception as e:
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        response.status = "error"
-        response.message = str(e)
-        response.data = None
+        return ResponseModel.error(
+            500,
+            str(e)
+        )
 
-        return response
 
-    finally:
-        db.close()
-
-def get_patient(patient_id: int):
-    
-
-    db = SessionLocal()
-
+def get_patient(patient_id: int, db: Session):
     try:
         patient = db.get(Patient, patient_id)
 
         if patient is None:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            response.status = "error"
-            response.message = "Patient not found"
-            response.data = None
+            return ResponseModel.error(
+                404,
+                "Patient not found"
+            )
 
-            return response
-
-        response.status_code = status.HTTP_200_OK
-        response.status = "success"
-        response.message = "Patient found successfully"
-        response.data = patient_data(patient)
-
-        return response
+        return ResponseModel.success(
+            "Patient found successfully",
+            patient_data(patient)
+        )
 
     except Exception as e:
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        response.status = "error"
-        response.message = str(e)
-        response.data = None
+        return ResponseModel.error(
+            500,
+            str(e)
+        )
 
-        return response
 
-    finally:
-        db.close()
-
-def create_patient(patient_values: dict):
-    db = SessionLocal()
-
+def create_patient(patient_values: dict, db: Session):
     try:
         patient_id = patient_values["patient_id"]
-        existing_patient= db.get(Patient, patient_id)
-        if  existing_patient is not None:
-            response.status_code = status.HTTP_409_CONFLICT
-            response.status = "error"
-            response.message = "Patient ID already exists"
-            response.data = patient_data(existing_patient)
 
-            return response
+        existing_patient = db.get(Patient, patient_id)
+
+        if existing_patient is not None:
+            return ResponseModel.error(
+                409,
+                "Patient ID already exists",
+                patient_data(existing_patient)
+            )
 
         patient = Patient(**patient_values)
 
@@ -99,41 +67,31 @@ def create_patient(patient_values: dict):
         db.commit()
         db.refresh(patient)
 
-        response.status_code = status.HTTP_201_CREATED
-        response.status = "success"
-        response.message = "Patient created successfully"
-        response.data = patient_data(patient)
-
-        return response
+        return ResponseModel.created(
+            "Patient created successfully",
+            patient_data(patient)
+        )
 
     except Exception as e:
         db.rollback()
 
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        response.status = "error"
-        response.message = str(e)
-        response.data = None
+        return ResponseModel.error(
+            500,
+            str(e)
+        )
 
-        return response
 
-    finally:
-        db.close()
-def update_patient(updated_patient: dict):
-
-    db = SessionLocal()
-
+def update_patient(updated_patient: dict, db: Session):
     try:
         patient_id = updated_patient["patient_id"]
 
         patient = db.get(Patient, patient_id)
 
         if patient is None:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            response.status = "error"
-            response.message = "Patient not found"
-            response.data = None
-
-            return response
+            return ResponseModel.error(
+                404,
+                "Patient not found"
+            )
 
         for field, value in updated_patient.items():
             if field != "patient_id" and hasattr(patient, field):
@@ -142,62 +100,44 @@ def update_patient(updated_patient: dict):
         db.commit()
         db.refresh(patient)
 
-        response.status_code = status.HTTP_200_OK
-        response.status = "success"
-        response.message = "Patient updated successfully"
-        response.data = patient_data(patient)
-
-        return response
+        return ResponseModel.success(
+            "Patient updated successfully",
+            patient_data(patient)
+        )
 
     except Exception as e:
         db.rollback()
 
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        response.status = "error"
-        response.message = str(e)
-        response.data = None
+        return ResponseModel.error(
+            500,
+            str(e)
+        )
 
-        return response
 
-    finally:
-        db.close()
-
-def delete_patient(patient_id: int):
-
-    db = SessionLocal()
-
+def delete_patient(patient_id: int, db: Session):
     try:
         patient = db.get(Patient, patient_id)
 
         if patient is None:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            response.status = "error"
-            response.message = "Patient not found"
-            response.data = None
-
-            return response
+            return ResponseModel.error(
+                404,
+                "Patient not found"
+            )
 
         deleted_patient = patient_data(patient)
 
         db.delete(patient)
         db.commit()
 
-        response.status_code = status.HTTP_200_OK
-        response.status = "success"
-        response.message = "Patient deleted successfully"
-        response.data = deleted_patient
-
-        return response
+        return ResponseModel.success(
+            "Patient deleted successfully",
+            deleted_patient
+        )
 
     except Exception as e:
         db.rollback()
 
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        response.status = "error"
-        response.message = str(e)
-        response.data = None
-
-        return response
-
-    finally:
-        db.close()
+        return ResponseModel.error(
+            500,
+            str(e)
+        )
