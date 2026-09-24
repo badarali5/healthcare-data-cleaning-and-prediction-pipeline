@@ -1,280 +1,238 @@
-# Data Cleaning and Machine Learning Pipeline
+# Healthcare Data Cleaning and Prediction Pipeline
 
-A Python-based data processing and machine learning pipeline that cleans and validates healthcare data, performs feature analysis, trains classification models, and generates predictions for patient conditions.
+This project combines a healthcare data cleaning workflow, validation checks, feature analysis, and machine learning model training into a single Python application. It also exposes patient endpoints through a FastAPI service for CRUD operations and condition prediction.
 
-## Project Overview
+## Overview
 
-This project follows a complete machine learning workflow:
+The pipeline processes raw patient data from CSV format, cleans and validates it, selects relevant features, trains classification models, saves the best-performing model, and allows predictions to be made from API requests.
 
-1. Load raw healthcare data
-2. Clean and preprocess the dataset
-3. Validate data quality
-4. Analyze feature relationships with the target variable
-5. Train multiple classification models
-6. Evaluate model performance
-7. Generate predictions for new patient data
+The model predicts patient condition labels such as:
 
-The target variable is **Condition**, which contains the following classes:
+- Asthma
+- Diabetes
+- Heart Disease
+- Hypertension
 
-* Asthma
-* Diabetes
-* Heart Disease
-* Hypertension
+## Features
 
-## Project Structure
+- Raw healthcare dataset ingestion from CSV files
+- Data cleaning and normalization
+- Duplicate and missing-value handling
+- Validation reporting for data quality issues
+- Feature selection for model training
+- Model benchmarking and best-model selection
+- Artifacts saving for reuse during prediction
+- FastAPI endpoints for patient management
+- Patient condition prediction endpoint
+
+## Tech stack
+
+- Python
+- Pandas
+- NumPy
+- scikit-learn
+- SciPy
+- Matplotlib
+- Seaborn
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- psycopg
+- python-dotenv
+
+## Project structure
 
 ```text
 data-cleaning-pipeline/
-│
-├── artifacts/
-│   └── Trained models and related artifacts
-│
+├── app/
+│   ├── controller/
+│   │   └── patient_routes.py
+│   ├── schema/
+│   │   ├── patient.py
+│   │   └── response.py
+│   ├── services/
+│   │   └── patient_service.py
+│   └── main.py
 ├── cleaning/
 │   ├── clean_data.py
 │   └── validate_data.py
-│
 ├── data/
-│   ├── raw/
-│   │   └── Original dataset
-│   └── cleaned/
-│       └── Cleaned dataset
-│
+│   ├── cleaned/
+│   │   └── healthcare_clean.json
+│   └── raw/
+│       └── healthcare.csv
+├── model/
+│   └── patient.py
 ├── training/
 │   ├── feature_analysis.py
 │   ├── model_training.py
 │   └── predict.py
-│
 ├── validation_report/
-│   └── Generated validation reports
-│
+│   └── validation_report.json
+├── artifacts/
 ├── main.py
+├── database.py
+├── import_json.py
 ├── requirements.txt
 ├── README.md
-└── .gitignore
+└── .env.example (optional, if you create one locally)
 ```
 
-## Features
+## Data pipeline
 
-### Data Cleaning
+### 1. Cleaning
+The cleaning step reads the raw CSV file, standardizes column names, normalizes values, removes duplicates, and handles missing or inconsistent records before preparing the dataset for modeling.
 
-* Import raw CSV datasets
-* Handle missing values
-* Remove duplicate records
-* Standardize column names
-* Remove unnecessary whitespace
-* Standardize inconsistent text values
-* Convert columns to appropriate data types
-* Export cleaned datasets
+### 2. Validation
+The validator checks for: 
 
-### Data Validation
+- missing fields
+- invalid values
+- duplicate rows
+- schema inconsistencies
+- low-quality or malformed records
 
-The validation pipeline checks:
+Validation results are written to the `validation_report/` directory.
 
-* Required columns
-* Missing values
-* Duplicate records
-* Data types
-* Numeric ranges
-* Invalid or inconsistent values
-* Overall dataset structure and quality
+### 3. Feature analysis
+Feature analysis identifies the variables most strongly associated with the target condition, helping reduce noise and improve model performance.
 
-Validation results are stored in the `validation_report/` directory.
+### 4. Model training
+The project trains several classification models, compares their results, and saves the best-performing model together with preprocessing artifacts used for inference.
 
-### Feature Analysis
+### 5. API access
+FastAPI exposes patient management and prediction endpoints so the model can be used programmatically from a service or frontend.
 
-The project analyzes the relationship between input features and the target variable, `Condition`.
+## Prerequisites
 
-For categorical features, **Chi-Square tests** are used to evaluate whether there is a significant relationship with the target.
+Before running the project, make sure you have:
 
-For numerical features, **ANOVA** is used to compare differences between condition groups.
+- Python 3.10+
+- PostgreSQL running locally or in a configured environment
+- A virtual environment for the project
 
-This analysis helps identify which features may be useful for classification.
+## Setup
 
-### Machine Learning
-
-The training pipeline supports multiple classification algorithms, including:
-
-* Logistic Regression
-* K-Nearest Neighbors (KNN)
-* Decision Tree
-* Random Forest
-* Support Vector Machine (SVM)
-* Gaussian Naive Bayes
-
-The models are trained using the cleaned dataset and evaluated using classification metrics.
-
-### Prediction
-
-The `predict.py` script loads the trained model and generates predictions for new patient records.
-
-Example:
-
-```text
-Patient 0: predicted Condition = Asthma
-Patient 1: predicted Condition = Diabetes
-```
-
-## Installation
-
-### Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/data-cleaning-pipeline.git
+git clone <repository-url>
 cd data-cleaning-pipeline
 ```
 
-### Create a Virtual Environment
+### 2. Create and activate a virtual environment
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
 
 ```bash
 python -m venv .venv
+source .venv/bin/activate
 ```
 
-### Activate the Virtual Environment
-
-**Windows:**
-
-```bash
-.venv\Scripts\activate
-```
-
-### Install Dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Dataset
+### 4. Configure the database
 
-Place the original dataset inside:
+The app uses PostgreSQL through SQLAlchemy and loads connection settings from environment variables. Default values are:
+
+- host: `localhost`
+- port: `5432`
+- database: `healthcare_db`
+- user: `postgres`
+
+Example environment configuration:
+
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=healthcare_db
+DB_USER=postgres
+DB_PASSWORD=your_password
+```
+
+Make sure a PostgreSQL database with the configured name already exists before starting the API or running the training pipeline.
+
+## Run the full pipeline
+
+This script cleans the dataset, validates it, trains the model, and saves the final artifacts:
+
+```bash
+python main.py
+```
+
+## Start the API
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The API is exposed through the `app.main:app` entry point and includes the following routes.
+
+### Patient routes
+
+- `GET /patients/` — list all patients
+- `GET /patients/{patient_id}` — fetch one patient by ID
+- `POST /patients/` — create a patient record
+- `PUT /patients/` — update a patient record
+- `DELETE /patients/{patient_id}` — delete a patient record
+- `POST /patients/predict` — predict a patient condition from input data
+
+### Root endpoint
+
+- `GET /` — health check message confirming the service is running
+
+## Input and output files
+
+### Raw data
 
 ```text
-data/raw/
+data/raw/healthcare.csv
 ```
 
-The cleaned dataset will be generated inside:
+### Cleaned data
 
 ```text
-data/cleaned/
+data/cleaned/healthcare_clean.json
 ```
 
-## Usage
+### Validation report
 
-### 1. Clean the Dataset
-
-```bash
-python cleaning/clean_data.py
+```text
+validation_report/validation_report.json
 ```
 
-This processes the raw dataset and generates a cleaned version.
-
-### 2. Validate the Dataset
-
-```bash
-python cleaning/validate_data.py
-```
-
-This performs data-quality checks and generates validation results.
-
-### 3. Perform Feature Analysis
-
-```bash
-python training/feature_analysis.py
-```
-
-This analyzes relationships between the available features and the target variable, `Condition`.
-
-### 4. Train the Models
-
-```bash
-python training/model_training.py
-```
-
-This trains the supported classification models and evaluates their performance.
-
-Trained models and related files are stored in:
+### Model artifacts
 
 ```text
 artifacts/
 ```
 
-### 5. Generate Predictions
+These artifacts include the trained model and metadata required for prediction.
+
+## Example workflow
 
 ```bash
-python training/predict.py
+python main.py
+uvicorn app.main:app --reload
 ```
 
-This loads the trained model and predicts the condition for new patient records.
+Once the model has been trained, you can send patient records to the prediction endpoint and receive a predicted condition along with probability scores.
 
-## Machine Learning Workflow
+## Notes
 
-```text
-Raw Dataset
-     │
-     ▼
-Data Cleaning
-     │
-     ▼
-Data Validation
-     │
-     ▼
-Feature Analysis
-     │
-     ▼
-Feature Selection / Preprocessing
-     │
-     ▼
-Model Training
-     │
-     ▼
-Model Evaluation
-     │
-     ▼
-Trained Model
-     │
-     ▼
-Prediction
-```
+This repository is intended as a practical example of a healthcare ML pipeline that combines data engineering, model training, and backend API integration in a single project. It is useful for learning, prototyping, and extending into a larger healthcare analytics workflow.
 
-## Target Variable
-
-The model predicts the patient's **Condition**.
-
-| Condition     |
-| ------------- |
-| Asthma        |
-| Diabetes      |
-| Heart Disease |
-| Hypertension  |
-
-## Output
-
-The project generates several types of output.
-
-### Cleaned Data
-
-```text
-data/cleaned/
-```
-
-Contains the processed dataset ready for analysis and machine learning.
-
-### Validation Reports
-
-```text
-validation_report/
-```
-
-Contains reports describing the quality and validity of the dataset.
-
-### Model Artifacts
-
-```text
-artifacts/
-```
-
-Contains trained machine learning models and other files required for prediction.
-
-### Predictions
 
 The prediction script outputs the predicted condition for each input patient.
 

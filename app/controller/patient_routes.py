@@ -11,7 +11,8 @@ from app.services.patient_service import (
     get_patient,
     create_patient,
     update_patient,
-    delete_patient
+    delete_patient,
+    predict_patient,
 )
 
 
@@ -69,6 +70,17 @@ def update_existing_patient(patient: PatientUpdate, db: Session = Depends(get_db
 def delete_existing_patient(patient_id: int, db: Session = Depends(get_db)):
 
     response = delete_patient(patient_id, db)
+
+    return JSONResponse(
+        status_code=response.status_code,
+        content=response.model_dump()
+    )
+
+
+@router.post("/predict", response_model=ResponseModel)
+def predict_patient_condition(patient: dict):
+
+    response = predict_patient(patient)
 
     return JSONResponse(
         status_code=response.status_code,
